@@ -13,7 +13,9 @@ def handle_text(update, context):
 
 
 def main():
-    updater = Updater("640769917:AAFoD9m-vyOaQ6sTbyW7ah-RGJW1XPD6c6A", use_context=True)
+    token = input('Please enter the UTown bot token: ')
+
+    updater = Updater(token, use_context=True)
 
     dp = updater.dispatcher
 
