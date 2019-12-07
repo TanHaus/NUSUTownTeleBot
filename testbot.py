@@ -2,6 +2,17 @@ from TextToOwO import owo
 import requests
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
+#Create Pandas Dataframe
+import pandas as pd 
+opening_hours_file = 'customer_data.xlsx'
+opening_hours = pd.read_excel(opening_hours_file,
+sheetname=0,
+header=0,
+index_col=False,
+keep_default_na=True
+)
+opening_hours.head()
+
 def start(update, context):
     update.message.reply_text("UwU")
 
