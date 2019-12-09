@@ -59,7 +59,6 @@ def handle_store(update, context):
     
     query.message.reply_text("{} is {} open".format(query.data, is_open))
     query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
-    
 
     return
 
