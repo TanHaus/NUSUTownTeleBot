@@ -49,18 +49,21 @@ def handle_category(update, context):
 
 def handle_store(update, context):
     query = update.callback_query
+    today_of_week = pd.Timestamp.today().day_name()[0:3]
 
     query.message.reply_text("Selected option: {}".format(query.data))
-    query.message.reply_text('Opening hours: {}'.format(opening_hours[opening_hours.Store==query.data]['Term Opening Hours (Mon)']
-                                                        .to_string()
+    query.message.reply_text("Today is {}".format(today_of_week))
+    query.message.reply_text('Opening hours: {}'.format(opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today_of_week + ')']
+                                                        .to_numpy()[0]
                                                         )
                             )
 
     return
 
 def main():
-    token = input('Please enter the UTown bot token: ')
-
+    #token = input('Please enter the UTown bot token: ')
+    token = '640769917:AAFoD9m-vyOaQ6sTbyW7ah-RGJW1XPD6c6A'
+    
     updater = Updater(token, use_context=True)
 
     dp = updater.dispatcher
@@ -89,8 +92,7 @@ def main():
 
 if __name__=='__main__':
         # Create Pandas Dataframe
-    opening_hours_file = 'Utown Outlets Opening Hours.xlsx'
-    opening_hours = pd.read_excel(opening_hours_file,
+    opening_hours = pd.read_excel('Utown Outlets Opening Hours.xlsx',
                                   header=0,
                                   index_col=False,
                                   keep_default_na=True

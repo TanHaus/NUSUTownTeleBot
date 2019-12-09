@@ -1,4 +1,4 @@
-The twins and Gabriel present:
+TanHaus presents:
 # NUSUTownTeleBot
 
 A telebot that informs users of the shops and amenities available in Utown.
