@@ -49,14 +49,17 @@ def handle_category(update, context):
 
 def handle_store(update, context):
     query = update.callback_query
-    today_of_week = pd.Timestamp.today().day_name()[0:3]
+    today = pd.Timestamp.today()
 
-    query.message.reply_text("Selected option: {}".format(query.data))
-    query.message.reply_text("Today is {}".format(today_of_week))
-    query.message.reply_text('Opening hours: {}'.format(opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today_of_week + ')']
-                                                        .to_numpy()[0]
-                                                        )
-                            )
+    store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.day_name()[0:3] + ')'].to_numpy()[0]
+    start_time = store_opening_hours[:store_opening_hours.find('-')]
+    end_time = store_opening_hours[store_opening_hours.find('-')+1:]
+    is_open = 'not'
+    if int(start_time)<today.hour<int(end_time): is_open = ''
+    
+    query.message.reply_text("{} is {} open".format(query.data, is_open))
+    query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
+    
 
     return
 
