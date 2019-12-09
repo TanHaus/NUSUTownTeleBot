@@ -5,13 +5,12 @@ import pandas as pd
 
 
 def start(update, context):
-    update.message.reply_text("UwU")
-    '''
-    someone can write some instructions here
-    '''
-
-def help(update, context):
-    update.message.reply_text("Hewp! :o")
+    update.message.reply_text("Welcome to the NUS Utown TeleBot!\n" +
+    "Ever been hungry in the middle of the night and dying to know which food stores are still open? " +
+    "Or wondered to know what are the retail and sporting options here in Utown?\n" 
+    "Then you have come to the right place. Created by TanHaus, this Bot aims to provide useful information about the shops and amenities available in the Utown Campus. " +
+    "To help you enhance your Utown experience, you may find the following commands useful:\n" +
+    "/stores: Shows the directory of Utown shops and amenities. \n /open: Shows all stores that are currently open.")
 
 def show_stores(update, context):
     keyboard = []
@@ -73,7 +72,6 @@ def main():
     buttons = []
 
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
     # dp.add_handler(CommandHandler("stores", show_stores))
     # dp.add_handler(CallbackQueryHandler(button))
 
