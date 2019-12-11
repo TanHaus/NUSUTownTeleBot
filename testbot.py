@@ -67,19 +67,12 @@ def handle_store(update, context):
         else:
             store_opening_hours_1 = store_opening_hours[:store_opening_hours.find(',')]
             store_opening_hours_2 = store_opening_hours[store_opening_hours.find(',')+2:]
-
-            query.message.reply_text(store_opening_hours_1, store_opening_hours_2)
             
             start_time_1, end_time_1 = get_start_end_time(store_opening_hours_1)
             start_time_2, end_time_2 = get_start_end_time(store_opening_hours_2)
         
-            query.message.reply_text(start_time_1, end_time_1, start_time_2, end_time_2)
-            #if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): is_open = True
-            #if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): is_open = True   
-            if int(start_time_1)<int('0030')<int(end_time_1): 
-                is_open = True
-                query.message.reply_text('1')
-            if int(start_time_2)<int('0030')<int(end_time_2): is_open = True          
+            if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): is_open = True
+            if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): is_open = True          
 
         if is_open:
             query.message.reply_text("{} is open".format(query.data))
