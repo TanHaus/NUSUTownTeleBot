@@ -46,18 +46,49 @@ def handle_category(update, context):
 
     return 'handle_store'
 
+def get_start_end_time(store_opening_hours):
+    start_time = store_opening_hours[:store_opening_hours.find('-')]
+    end_time = store_opening_hours[store_opening_hours.find('-')+1:]
+    return [start_time, end_time]
+
 def handle_store(update, context):
     query = update.callback_query
     today = pd.Timestamp.today()
-
+    is_open = False
     store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.day_name()[0:3] + ')'].to_numpy()[0]
-    start_time = store_opening_hours[:store_opening_hours.find('-')]
-    end_time = store_opening_hours[store_opening_hours.find('-')+1:]
-    is_open = 'not'
-    if int(start_time)<today.hour<int(end_time): is_open = ''
     
-    query.message.reply_text("{} is {} open".format(query.data, is_open))
-    query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
+    if store_opening_hours == 'Closed':
+        query.message.reply_text("{} is closed".format(query.data))
+        #tell user when the store opens
+    else:
+        if ',' not in store_opening_hours:
+            start_time, end_time = get_start_end_time(store_opening_hours)    
+            if int(start_time)<int(today.strftime('%H%M'))<int(end_time): is_open = True
+        else:
+            store_opening_hours_1 = store_opening_hours[:store_opening_hours.find(',')]
+            store_opening_hours_2 = store_opening_hours[store_opening_hours.find(',')+2:]
+
+            query.message.reply_text(store_opening_hours_1, store_opening_hours_2)
+            
+            start_time_1, end_time_1 = get_start_end_time(store_opening_hours_1)
+            start_time_2, end_time_2 = get_start_end_time(store_opening_hours_2)
+        
+            query.message.reply_text(start_time_1, end_time_1, start_time_2, end_time_2)
+            #if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): is_open = True
+            #if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): is_open = True   
+            if int(start_time_1)<int('0030')<int(end_time_1): 
+                is_open = True
+                query.message.reply_text('1')
+            if int(start_time_2)<int('0030')<int(end_time_2): is_open = True          
+
+        if is_open:
+            query.message.reply_text("{} is open".format(query.data))
+            query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
+        else:
+            query.message.reply_text("{} is closed".format(query.data))
+            #tell user when the store opens
+        
+        
 
     return
 
