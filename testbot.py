@@ -1,3 +1,4 @@
+import os
 import requests
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
@@ -78,8 +79,8 @@ def handle_store(update, context):
     return
 
 def main():
-    #token = input('Please enter the UTown bot token: ')
-    token = '640769917:AAFoD9m-vyOaQ6sTbyW7ah-RGJW1XPD6c6A'
+    token_key = 'TOKEN_UTOWN'
+    token = os.environ.get(token_key)
     
     updater = Updater(token, use_context=True)
 
