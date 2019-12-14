@@ -5,6 +5,8 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 import pandas as pd
 
 
+# Command functions
+
 def start(update, context):
     update.message.reply_text("Welcome to the NUS Utown TeleBot!\n" +
     "Ever been hungry in the middle of the night and dying to know which food stores are still open? " +
@@ -24,6 +26,19 @@ def show_stores(update, context):
 
     return 'handle_category'
 
+def show_open_stores(update, context):
+    today = pd.Timestamp.today()
+    open_stores = ''
+    column_label_today = 'Term Opening Hours (' + today.day_name()[0:3] + ')'
+    for index in opening_hours.index:
+        store_opening_hours = opening_hours.loc[index, column_label_today]
+        if is_open_today(store_opening_hours): 
+            open_stores += (opening_hours.loc[index, 'Store'] + '\t(' + store_opening_hours + ')' + '\n')
+
+    update.message.reply_text('The following stores are still open:\n{}'.format(open_stores))
+        
+# Handle functions
+
 def handle_category(update, context):
     query = update.callback_query
     '''
@@ -38,7 +53,6 @@ def handle_category(update, context):
 
     keyboard = []
     for i in opening_hours[opening_hours['Category']==query.data]['Store']:
-        print(i)
         keyboard.append([InlineKeyboardButton(i, callback_data=i)])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -50,13 +64,21 @@ def handle_category(update, context):
 def handle_store(update, context):
     query = update.callback_query
     today = pd.Timestamp.today()
-    is_open = False
     store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.day_name()[0:3] + ')'].to_numpy()[0]
     
     if store_opening_hours == 'Closed':
         query.message.reply_text("{} is closed".format(query.data))
         #tell user when the store opens
+
+    elif is_open_today(store_opening_hours):
+        query.message.reply_text("{} is open".format(query.data))
+        query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
+
     else:
+        query.message.reply_text("{} is closed".format(query.data))
+        #tell user when the store opens
+
+        '''
         if len(store_opening_hours) == 9:
             start_time, end_time = store_opening_hours.split('-')    
             if int(start_time)<int(today.strftime('%H%M'))<int(end_time): is_open = True
@@ -68,15 +90,26 @@ def handle_store(update, context):
         
             if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): is_open = True
             if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): is_open = True          
-
-        if is_open:
-            query.message.reply_text("{} is open".format(query.data))
-            query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
-        else:
-            query.message.reply_text("{} is closed".format(query.data))
-            #tell user when the store opens
+        '''
         
     return
+
+# Helper function
+def is_open_today(store_opening_hours):
+    today = pd.Timestamp.today()
+    if len(store_opening_hours) == 9:
+        start_time, end_time = store_opening_hours.split('-')    
+        if int(start_time)<int(today.strftime('%H%M'))<int(end_time): return True
+    elif store_opening_hours == 'Closed': return False
+    else:
+        store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
+        
+        start_time_1, end_time_1 = store_opening_hours_1.split('-')
+        start_time_2, end_time_2 = store_opening_hours_2.split('-')    
+    
+        if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): return True
+        if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): return True 
+    return False
 
 def main():
     token_key = 'TOKEN_UTOWN'
@@ -102,6 +135,8 @@ def main():
     )
 
     dp.add_handler(conv_handler)
+
+    dp.add_handler(CommandHandler("open", show_open_stores))
 
     updater.start_polling()
 
