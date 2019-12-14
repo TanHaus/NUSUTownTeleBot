@@ -46,11 +46,6 @@ def handle_category(update, context):
 
     return 'handle_store'
 
-def get_start_end_time(store_opening_hours):
-    start_time = store_opening_hours[:store_opening_hours.find('-')]
-    end_time = store_opening_hours[store_opening_hours.find('-')+1:]
-    return [start_time, end_time]
-
 def handle_store(update, context):
     query = update.callback_query
     today = pd.Timestamp.today()
@@ -61,15 +56,14 @@ def handle_store(update, context):
         query.message.reply_text("{} is closed".format(query.data))
         #tell user when the store opens
     else:
-        if ',' not in store_opening_hours:
-            start_time, end_time = get_start_end_time(store_opening_hours)    
+        if len(store_opening_hours) == 9:
+            start_time, end_time = store_opening_hours.split('-')    
             if int(start_time)<int(today.strftime('%H%M'))<int(end_time): is_open = True
         else:
-            store_opening_hours_1 = store_opening_hours[:store_opening_hours.find(',')]
-            store_opening_hours_2 = store_opening_hours[store_opening_hours.find(',')+2:]
+            store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
             
-            start_time_1, end_time_1 = get_start_end_time(store_opening_hours_1)
-            start_time_2, end_time_2 = get_start_end_time(store_opening_hours_2)
+            start_time_1, end_time_1 = store_opening_hours_1.split('-')
+            start_time_2, end_time_2 = store_opening_hours_2.split('-')    
         
             if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): is_open = True
             if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): is_open = True          
@@ -81,8 +75,6 @@ def handle_store(update, context):
             query.message.reply_text("{} is closed".format(query.data))
             #tell user when the store opens
         
-        
-
     return
 
 def main():
