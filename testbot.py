@@ -27,7 +27,6 @@ def show_stores(update, context):
     return 'handle_category'
 
 def show_open_stores(update, context):
-    #today = pd.Timestamp.today()
     open_stores = ''
     column_label_today = 'Term Opening Hours (' + today.day_name()[0:3] + ')'
     for index in opening_hours.index:
@@ -36,10 +35,6 @@ def show_open_stores(update, context):
             open_stores += (opening_hours.loc[index, 'Store'] + '\t(' + store_opening_hours + ')' + '\n')
 
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores))
-
-    opening_hours['Open?'] = opening_hours['Store'].apply(is_open_today)
-    update.message.reply_text(opening_hours[opening_hours['Open']][Store])
-
 
     
         
@@ -69,7 +64,6 @@ def handle_category(update, context):
 
 def handle_store(update, context):
     query = update.callback_query
-    #today = pd.Timestamp.today()
     store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.day_name()[0:3] + ')'].to_numpy()[0]
     
     if store_opening_hours == 'Closed':
@@ -102,7 +96,6 @@ def handle_store(update, context):
 
 # Helper function
 def is_open_today(store_opening_hours):
-    #today = pd.Timestamp.today()
     if len(store_opening_hours) == 9:
         start_time, end_time = store_opening_hours.split('-')    
         if int(start_time)<int(today.strftime('%H%M'))<int(end_time): return True
@@ -126,8 +119,6 @@ def main():
     dp = updater.dispatcher
 
     buttons = []
-
-    today = pd.Timestamp.today()
 
     dp.add_handler(CommandHandler("start", start))
     # dp.add_handler(CommandHandler("stores", show_stores))
@@ -159,4 +150,5 @@ if __name__=='__main__':
                                   )
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
+    today = pd.Timestamp.today()
     main()
