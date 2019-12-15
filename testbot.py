@@ -64,6 +64,7 @@ def handle_category(update, context):
     return 'handle_store'
 
 def handle_store(update, context):
+    today = pd.Timestamp.today()
     query = update.callback_query
     store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.day_name()[0:3] + ')'].to_numpy()[0]
     
