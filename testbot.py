@@ -29,7 +29,7 @@ def show_stores(update, context):
     return 'handle_category'
 
 def show_open_stores(update, context):
-    today = pd.Timestamp.today()
+    today = pd.Timestamp.today('UTC').tz_convert('Asia/Singapore')
     open_stores = ''
     column_label_today = 'Term Opening Hours (' + today.day_name()[0:3] + ')'
     for index in opening_hours.index:
@@ -66,7 +66,7 @@ def handle_category(update, context):
     return 'handle_store'
 
 def handle_store(update, context):
-    today = pd.Timestamp.today()
+    today = pd.Timestamp.today('UTC').tz_convert('Asia/Singapore')
     query = update.callback_query
     store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.day_name()[0:3] + ')'].to_numpy()[0]
     
@@ -92,7 +92,7 @@ def is_open_today(store_opening_hours):
     Format for parameter: HHMM-HHMM. Also handle 'Closed' and 'HHMM-HHMM, HHMM-HHMM'
     """
 
-    today = pd.Timestamp.today() 
+    today = pd.Timestamp.today('UTC').tz_convert('Asia/Singapore')
     
     if len(store_opening_hours) == 9:
         start_time, end_time = store_opening_hours.split('-')    
@@ -111,7 +111,7 @@ def is_open_today(store_opening_hours):
     return False
 
 def temp(update, context):
-    today = pd.Timestamp.today() 
+    today = pd.Timestamp.today('UTC').tz_convert('Asia/Singapore') 
     URL = 'https://api.data.gov.sg/v1/environment/air-temperature'
     DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
     PARAMS = {'date_time': DATE_TIME}
