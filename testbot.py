@@ -27,6 +27,7 @@ def show_stores(update, context):
     return 'handle_category'
 
 def show_open_stores(update, context):
+    today = pd.Timestamp.today()
     open_stores = ''
     column_label_today = 'Term Opening Hours (' + today.day_name()[0:3] + ')'
     for index in opening_hours.index:
@@ -96,6 +97,7 @@ def handle_store(update, context):
 
 # Helper function
 def is_open_today(store_opening_hours):
+    today = pd.Timestamp.today() 
     if len(store_opening_hours) == 9:
         start_time, end_time = store_opening_hours.split('-')    
         if int(start_time)<int(today.strftime('%H%M'))<int(end_time): return True
@@ -150,5 +152,5 @@ if __name__=='__main__':
                                   )
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
-    today = pd.Timestamp.today()
+
     main()
