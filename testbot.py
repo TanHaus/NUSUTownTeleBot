@@ -13,7 +13,9 @@ def start(update, context):
     "Or wondered to know what are the retail and sporting options here in Utown?\n" 
     "Then you have come to the right place. Created by TanHaus, this Bot aims to provide useful information about the shops and amenities available in the Utown Campus. " +
     "To help you enhance your Utown experience, you may find the following commands useful:\n" +
-    "/stores: Shows the directory of Utown shops and amenities. \n /open: Shows all stores that are currently open.")
+    "/stores: Shows the directory of Utown shops and amenities."
+    "\n/open: Shows all stores that are currently open."
+    "\n/temp: Shows current air temperature.")
 
 def show_stores(update, context):
     keyboard = []
@@ -108,6 +110,19 @@ def is_open_today(store_opening_hours):
     
     return False
 
+def temp(update, context):
+    today = pd.Timestamp.today() 
+    URL = 'https://api.data.gov.sg/v1/environment/air-temperature'
+    DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
+    PARAMS = {'date_time': DATE_TIME}
+    id1 = 'S50'
+    id2 = 'S107'
+    temp = pd.DataFrame(requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']).set_index('station_id')
+    temp1 = float(temp.loc[id1].to_numpy()[0])
+    temp2 = float(temp.loc[id2].to_numpy()[0])
+    update.message.reply_text("{0:.1f}".format((temp1+temp2)/2))
+    
+
 def main():
     token_key = 'TOKEN_UTOWN'
     token = os.environ.get(token_key)
@@ -127,6 +142,7 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("open", show_open_stores))
+    dp.add_handler(CommandHandler("temp", temp))
     dp.add_handler(conv_handler)
 
     updater.start_polling()
