@@ -79,30 +79,24 @@ def handle_store(update, context):
     else:
         query.message.reply_text("{} is closed".format(query.data))
         #tell user when the store opens
-
-        '''
-        if len(store_opening_hours) == 9:
-            start_time, end_time = store_opening_hours.split('-')    
-            if int(start_time)<int(today.strftime('%H%M'))<int(end_time): is_open = True
-        else:
-            store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
-            
-            start_time_1, end_time_1 = store_opening_hours_1.split('-')
-            start_time_2, end_time_2 = store_opening_hours_2.split('-')    
-        
-            if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): is_open = True
-            if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): is_open = True          
-        '''
         
     return
 
 # Helper function
 def is_open_today(store_opening_hours):
+    """
+    Check if the input store_opening_hours is open right now. Return a boolean
+
+    Format for parameter: HHMM-HHMM. Also handle 'Closed' and 'HHMM-HHMM, HHMM-HHMM'
+    """
+
     today = pd.Timestamp.today() 
+    
     if len(store_opening_hours) == 9:
         start_time, end_time = store_opening_hours.split('-')    
         if int(start_time)<int(today.strftime('%H%M'))<int(end_time): return True
     elif store_opening_hours == 'Closed': return False
+    
     else:
         store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
         
@@ -111,6 +105,7 @@ def is_open_today(store_opening_hours):
     
         if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): return True
         if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): return True 
+    
     return False
 
 def main():
@@ -118,14 +113,6 @@ def main():
     token = os.environ.get(token_key)
     
     updater = Updater(token, use_context=True)
-
-    dp = updater.dispatcher
-
-    buttons = []
-
-    dp.add_handler(CommandHandler("start", start))
-    # dp.add_handler(CommandHandler("stores", show_stores))
-    # dp.add_handler(CallbackQueryHandler(button))
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('stores', show_stores)],
@@ -136,21 +123,19 @@ def main():
         fallbacks=[CommandHandler("stores", show_stores)]
     )
 
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("open", show_open_stores))
     dp.add_handler(conv_handler)
 
-    dp.add_handler(CommandHandler("open", show_open_stores))
-
     updater.start_polling()
-
     updater.idle()
 
 if __name__=='__main__':
-        # Create Pandas Dataframe
+    # Create Pandas Dataframe
     opening_hours = pd.read_excel('Utown Outlets Opening Hours.xlsx',
-                                  header=0,
-                                  index_col=False,
-                                  keep_default_na=True
-                                  )
+                                  header=0, index_col=False, keep_default_na=True)
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
 
