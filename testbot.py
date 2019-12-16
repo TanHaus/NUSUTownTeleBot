@@ -1,11 +1,16 @@
 import os
 import requests
+import datetime as dt
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 import pandas as pd
 
 
-# Command functions
+##########################
+#                        #
+#   Command functions    #
+#                        #
+##########################
 
 def start(update, context):
     update.message.reply_text("Welcome to the NUS Utown TeleBot!\n" +
@@ -29,9 +34,9 @@ def show_stores(update, context):
     return 'handle_category'
 
 def show_open_stores(update, context):
-    today = pd.Timestamp.today('UTC').tz_convert('Asia/Singapore')
+    today = get_current_SGtime()
     open_stores = ''
-    column_label_today = 'Term Opening Hours (' + today.day_name()[0:3] + ')'
+    column_label_today = 'Term Opening Hours (' + today.strftime('%a') + ')'
     for index in opening_hours.index:
         store_opening_hours = opening_hours.loc[index, column_label_today]
         if is_open_today(store_opening_hours): 
@@ -41,7 +46,11 @@ def show_open_stores(update, context):
 
     
         
-# Handle functions
+##########################
+#                        #
+#    Handler functions   #
+#                        #
+##########################
 
 def handle_category(update, context):
     query = update.callback_query
@@ -66,9 +75,9 @@ def handle_category(update, context):
     return 'handle_store'
 
 def handle_store(update, context):
-    today = pd.Timestamp.today('UTC').tz_convert('Asia/Singapore')
+    today = get_current_SGtime()
     query = update.callback_query
-    store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.day_name()[0:3] + ')'].to_numpy()[0]
+    store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.strftime('%a') + ')'].to_numpy()[0]
     
     if store_opening_hours == 'Closed':
         query.message.reply_text("{} is closed".format(query.data))
@@ -84,7 +93,33 @@ def handle_store(update, context):
         
     return
 
-# Helper function
+def temp(update, context):
+    today = get_current_SGtime()
+    URL = 'https://api.data.gov.sg/v1/environment/air-temperature'
+    DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
+    PARAMS = {'date_time': DATE_TIME}
+    id1 = 'S50'
+    id2 = 'S107'
+    temp = requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']
+    temp = {x['station_id']: x['value'] for x in temp}
+    temp1 = float(temp[id1])
+    temp2 = float(temp[id2])
+    update.message.reply_text("{0:.1f}".format((temp1+temp2)/2))
+    
+def psi(update, context): 
+    today = get_current_SGtime()
+    URL = 'https://api.data.gov.sg/v1/environment/psi'
+    DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
+    PARAMS = {'date_time': DATE_TIME}
+    psi = requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']['psi_twenty_four_hourly']['south']
+    update.message.reply_text('PSI reading in UTown: {}'.format(psi))
+
+##########################
+#                        #
+#    Helper functions    #
+#                        #
+##########################
+
 def is_open_today(store_opening_hours):
     """
     Check if the input store_opening_hours is open right now. Return a boolean
@@ -92,7 +127,7 @@ def is_open_today(store_opening_hours):
     Format for parameter: HHMM-HHMM. Also handle 'Closed' and 'HHMM-HHMM, HHMM-HHMM'
     """
 
-    today = pd.Timestamp.today('UTC').tz_convert('Asia/Singapore')
+    today = get_current_SGtime()
     
     if len(store_opening_hours) == 9:
         start_time, end_time = store_opening_hours.split('-')    
@@ -110,18 +145,18 @@ def is_open_today(store_opening_hours):
     
     return False
 
-def temp(update, context):
-    today = pd.Timestamp.today('UTC').tz_convert('Asia/Singapore') 
-    URL = 'https://api.data.gov.sg/v1/environment/air-temperature'
-    DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
-    PARAMS = {'date_time': DATE_TIME}
-    id1 = 'S50'
-    id2 = 'S107'
-    temp = pd.DataFrame(requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']).set_index('station_id')
-    temp1 = float(temp.loc[id1].to_numpy()[0])
-    temp2 = float(temp.loc[id2].to_numpy()[0])
-    update.message.reply_text("{0:.1f}".format((temp1+temp2)/2))
-    
+def get_current_SGtime():
+    """
+    Return the current time in Singapore UTC+08:00
+    """
+    return dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=8)))
+
+
+##########################
+#                        #
+#      Main program      #
+#                        #
+##########################
 
 def main():
     token_key = 'TOKEN_UTOWN'
@@ -143,6 +178,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("open", show_open_stores))
     dp.add_handler(CommandHandler("temp", temp))
+    dp.add_handler(CommandHandler("psi", psi))
     dp.add_handler(conv_handler)
 
     updater.start_polling()
