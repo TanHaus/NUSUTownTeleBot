@@ -44,7 +44,16 @@ def show_open_stores(update, context):
 
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores))
 
-    
+def weather(update, context):
+    temp_data = get_online_data('https://api.data.gov.sg/v1/environment/air-temperature')
+    temp_data = {x['station_id']: x['value'] for x in temp_data}
+    weather_id = 'S50'
+    temp = temp_data[weather_id]
+    update.message.reply_text(temp) 
+
+
+
+
         
 ##########################
 #                        #
@@ -92,26 +101,9 @@ def handle_store(update, context):
         #tell user when the store opens
         
     return
-
-def temp(update, context):
-    today = get_current_SGtime()
-    URL = 'https://api.data.gov.sg/v1/environment/air-temperature'
-    DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
-    PARAMS = {'date_time': DATE_TIME}
-    id1 = 'S50'
-    id2 = 'S107'
-    temp = requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']
-    temp = {x['station_id']: x['value'] for x in temp}
-    temp1 = float(temp[id1])
-    temp2 = float(temp[id2])
-    update.message.reply_text("{0:.1f}".format((temp1+temp2)/2))
     
 def psi(update, context): 
-    today = get_current_SGtime()
-    URL = 'https://api.data.gov.sg/v1/environment/psi'
-    DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
-    PARAMS = {'date_time': DATE_TIME}
-    psi = requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']['psi_twenty_four_hourly']['south']
+    psi = get_online_data('https://api.data.gov.sg/v1/environment/psi')['psi_twenty_four_hourly']['south']
     update.message.reply_text('PSI reading in UTown: {}'.format(psi))
 
 ##########################
@@ -151,6 +143,11 @@ def get_current_SGtime():
     """
     return dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=8)))
 
+def get_online_data(URL):
+    today = get_current_SGtime()
+    DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
+    PARAMS = {'date_time': DATE_TIME}
+    return requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']
 
 ##########################
 #                        #
@@ -177,7 +174,7 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("open", show_open_stores))
-    dp.add_handler(CommandHandler("temp", temp))
+    dp.add_handler(CommandHandler("weather", weather))
     dp.add_handler(CommandHandler("psi", psi))
     dp.add_handler(conv_handler)
 
@@ -190,5 +187,11 @@ if __name__=='__main__':
                                   header=0, index_col=False, keep_default_na=True)
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
+
+    weather_URLs = {'temperature': 'https://api.data.gov.sg/v1/environment/air-temperature',
+                    'PSI': 'https://api.data.gov.sg/v1/environment/psi',
+                    'weather': 'https://api.data.gov.sg/v1/environment/2-hour-weather-forecast',
+                    '24hr weather forecast': 'https://api.data.gov.sg/v1/environment/24-hour-weather-forecast'}
+    
 
     main()
