@@ -87,16 +87,16 @@ def handle_store(update, context):
     def when_store_open():
         tomorrow = True
         next_day = today + dt.timedelta(days=1)
-        store_opening_hours_tmr = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
-        while(store_opening_hours_tmr == 'CLosed'):
+        store_opening_hours_next = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
+        while(store_opening_hours_next == 'Closed'):
             next_day = next_day + dt.timedelta(days=1)
-            store_opening_hours_tmr = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
+            store_opening_hours_next = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
             tomorrow = False
         
         text = 'tomorrow'
-        if tomorrow==False: text = 'next ' + next_day.strftime('%a')
+        if tomorrow == False: text = 'on ' + next_day.strftime('%A')
 
-        query.message.reply_text('But you can still visit {} {} from {} 😊'.format(query.data, text, store_opening_hours_tmr))
+        query.message.reply_text('But you can still visit {} {} from {} 😊'.format(query.data, text, store_opening_hours_next))
 
     if store_opening_hours == 'Closed':
         query.message.reply_text("{} is closed".format(query.data))
