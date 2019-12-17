@@ -123,8 +123,11 @@ def is_open_today(store_opening_hours):
     
     if len(store_opening_hours) == 9:
         start_time, end_time = store_opening_hours.split('-')    
-        if int(start_time)<int(today.strftime('%H%M'))<int(end_time): return True
-    elif store_opening_hours == 'Closed': return False
+        
+        if end_time == '2359':
+            if int(start_time)<=int(today.strftime('%H%M'))<=int(end_time): return True
+        else:
+            if int(start_time)<=int(today.strftime('%H%M'))<int(end_time): return True
     
     else:
         store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
@@ -132,8 +135,12 @@ def is_open_today(store_opening_hours):
         start_time_1, end_time_1 = store_opening_hours_1.split('-')
         start_time_2, end_time_2 = store_opening_hours_2.split('-')    
     
-        if int(start_time_1)<int(today.strftime('%H%M'))<int(end_time_1): return True
-        if int(start_time_2)<int(today.strftime('%H%M'))<int(end_time_2): return True 
+        if int(start_time_1)<=int(today.strftime('%H%M'))<int(end_time_1): return True
+
+        if end_time_2 == '2359':
+            if int(start_time_2)<=int(today.strftime('%H%M'))<=int(end_time_2): return True 
+        else:
+            if int(start_time_2)<=int(today.strftime('%H%M'))<int(end_time_2): return True 
     
     return False
 
