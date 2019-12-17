@@ -44,17 +44,13 @@ def show_open_stores(update, context):
 
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores))
 
-def weather(update, context):
-    temp_data = get_online_data('https://api.data.gov.sg/v1/environment/air-temperature')
-    temp_data = {x['station_id']: x['value'] for x in temp_data}
-    weather_id = 'S50'
-    temp = temp_data[weather_id]
-    update.message.reply_text(temp) 
+def haze(update, context):
+    PSI = get_SG_data('PSI')['psi_twenty_four_hourly']['south']
+    PM25 = get_SG_data('PM2.5')['pm25_one_hourly']['south']
+    update.message.reply_text('PSI reading in UTown: {}'.format(PSI))
+    update.message.reply_text('PM2.5 reading in UTown: {}'.format(PM25))
 
 
-
-
-        
 ##########################
 #                        #
 #    Handler functions   #
@@ -102,9 +98,6 @@ def handle_store(update, context):
         
     return
     
-def psi(update, context): 
-    psi = get_online_data('https://api.data.gov.sg/v1/environment/psi')['psi_twenty_four_hourly']['south']
-    update.message.reply_text('PSI reading in UTown: {}'.format(psi))
 
 ##########################
 #                        #
@@ -150,9 +143,10 @@ def get_current_SGtime():
     """
     return dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=8)))
 
-def get_online_data(URL):
+def get_SG_data(element):
     today = get_current_SGtime()
     DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
+    URL = SG_data_URLs[element]
     PARAMS = {'date_time': DATE_TIME}
     return requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']
 
@@ -181,8 +175,7 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("open", show_open_stores))
-    dp.add_handler(CommandHandler("weather", weather))
-    dp.add_handler(CommandHandler("psi", psi))
+    dp.add_handler(CommandHandler("haze", haze))
     dp.add_handler(conv_handler)
 
     updater.start_polling()
@@ -195,10 +188,8 @@ if __name__=='__main__':
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
 
-    weather_URLs = {'temperature': 'https://api.data.gov.sg/v1/environment/air-temperature',
-                    'PSI': 'https://api.data.gov.sg/v1/environment/psi',
-                    'weather': 'https://api.data.gov.sg/v1/environment/2-hour-weather-forecast',
-                    '24hr weather forecast': 'https://api.data.gov.sg/v1/environment/24-hour-weather-forecast'}
+    SG_data_URLs = {'PSI': 'https://api.data.gov.sg/v1/environment/psi',
+                    'PM2.5': 'https://api.data.gov.sg/v1/environment/pm25'}
     
 
     main()
