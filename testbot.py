@@ -39,10 +39,11 @@ def show_open_stores(update, context):
     column_label_today = 'Term Opening Hours (' + today.strftime('%a') + ')'
     for index in opening_hours.index:
         store_opening_hours = opening_hours.loc[index, column_label_today]
-        if is_open_today(store_opening_hours): 
-            open_stores += (opening_hours.loc[index, 'Store'] + '\t(' + store_opening_hours + ')' + '\n')
+        if is_open_today(store_opening_hours):
+            close_time = get_close_time(store_opening_hours)
+            open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
 
-    update.message.reply_text('The following stores are still open:\n{}'.format(open_stores))
+    update.message.reply_text('The following stores are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
     PSI = get_SG_data('PSI')['psi_twenty_four_hourly']['south']
@@ -150,6 +151,28 @@ def is_open_today(store_opening_hours):
             if int(start_time_2)<=int(today.strftime('%H%M'))<int(end_time_2): return True 
     
     return False
+
+def get_close_time(store_opening_hours):
+    '''
+    Get closing time those in the format of 'HHMM-HHMM' and 'HHMM-HHMM, HHMM-HHMM'
+    '''
+
+    if len(store_opening_hours) == 9:
+        close_time = store_opening_hours.split('-')[-1]
+        if close_time == '2359': return 'midnight'
+        return close_time
+    
+    else:
+        today = get_current_SGtime()
+        store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
+        
+        start_time_1, end_time_1 = store_opening_hours_1.split('-')
+    
+        if int(start_time_1)<=int(today.strftime('%H%M'))<int(end_time_1): return end_time_1
+
+        end_time_2 = store_opening_hours_2.split('-')[-1]
+        if end_time_2 == '2359': return 'midnight'
+        return end_time_2
 
 def get_current_SGtime():
     '''
