@@ -82,11 +82,25 @@ def handle_category(update, context):
 def handle_store(update, context):
     today = get_current_SGtime()
     query = update.callback_query
-    store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.strftime('%a') + ')'].to_numpy()[0]
+    store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.strftime('%a') + ')'].iloc[0]
     
+    def when_store_open():
+        tomorrow = True
+        next_day = today + dt.timedelta(days=1)
+        store_opening_hours_tmr = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
+        while(store_opening_hours_tmr == 'CLosed'):
+            next_day = next_day + dt.timedelta(days=1)
+            store_opening_hours_tmr = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
+            tomorrow = False
+        
+        text = 'tomorrow'
+        if tomorrow==False: text = 'next ' + next_day.strftime('%a')
+
+        query.message.reply_text('But you can still visit {} {} from {} 😊'.format(query.data, text, store_opening_hours_tmr))
+
     if store_opening_hours == 'Closed':
         query.message.reply_text("{} is closed".format(query.data))
-        #tell user when the store opens
+        when_store_open()
 
     elif is_open_today(store_opening_hours):
         query.message.reply_text("{} is open".format(query.data))
@@ -94,7 +108,7 @@ def handle_store(update, context):
 
     else:
         query.message.reply_text("{} is closed".format(query.data))
-        #tell user when the store opens
+        when_store_open()
         
     return
     
@@ -106,11 +120,11 @@ def handle_store(update, context):
 ##########################
 
 def is_open_today(store_opening_hours):
-    """
+    '''
     Check if the input store_opening_hours is open right now. Return a boolean
 
     Format for parameter: HHMM-HHMM. Also handle 'Closed' and 'HHMM-HHMM, HHMM-HHMM'
-    """
+    '''
 
     today = get_current_SGtime()
     
@@ -138,16 +152,26 @@ def is_open_today(store_opening_hours):
     return False
 
 def get_current_SGtime():
-    """
+    '''
     Return the current time in Singapore UTC+08:00
-    """
+    '''
+
     return dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=8)))
 
 def get_SG_data(element):
+    '''
+    Get data from data.gov.sg
+    '''
+
+    SG_data_URLs = {'PSI': 'https://api.data.gov.sg/v1/environment/psi',
+                    'PM2.5': 'https://api.data.gov.sg/v1/environment/pm25'}
+    
     today = get_current_SGtime()
     DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
+
     URL = SG_data_URLs[element]
     PARAMS = {'date_time': DATE_TIME}
+
     return requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']
 
 ##########################
@@ -187,9 +211,5 @@ if __name__=='__main__':
                                   header=0, index_col=False, keep_default_na=True)
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
-
-    SG_data_URLs = {'PSI': 'https://api.data.gov.sg/v1/environment/psi',
-                    'PM2.5': 'https://api.data.gov.sg/v1/environment/pm25'}
-    
 
     main()
