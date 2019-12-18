@@ -103,18 +103,31 @@ def handle_store(update, context):
     store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.strftime('%a') + ')'].iloc[0]
     
     def when_store_open():
-        tomorrow = True
-        next_day = today + dt.timedelta(days=1)
-        store_opening_hours_next = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
-        while(store_opening_hours_next == 'Closed'):
-            next_day = next_day + dt.timedelta(days=1)
-            store_opening_hours_next = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
-            tomorrow = False
+        next_day_text = 'later'
+        store_opening_hours_next = store_opening_hours
         
-        text = 'tomorrow'
-        if tomorrow == False: text = 'on ' + next_day.strftime('%A')
+        if len(store_opening_hours) == 9 and int(today.strftime('%H%M')) < int(store_opening_hours.split('-')[0]):
+            None
 
-        query.message.reply_text('But you can still visit {} {} from {} 😊'.format(query.data, text, store_opening_hours_next))
+        elif len(store_opening_hours) == 20 and int(today.strftime('%H%M')) < int(store_opening_hours.split(', ')[-1].split('-')[0]):
+            store_opening_hours_next = store_opening_hours.split(', ')[-1]
+
+        else:
+            tomorrow = True
+            next_day = today + dt.timedelta(days=1)
+            store_opening_hours_next = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
+
+            while(store_opening_hours_next == 'Closed'):
+                next_day = next_day + dt.timedelta(days=1)
+                store_opening_hours_next = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
+                tomorrow = False
+        
+            if tomorrow: 
+                next_day_text = 'tomorrow'
+            else:
+                next_day_text = 'on ' + next_day.strftime('%A')
+        
+        query.message.reply_text('But you can still visit {} {} from {} 😊'.format(query.data, next_day_text, store_opening_hours_next))
 
     if store_opening_hours == 'Closed':
         query.message.reply_text("{} is closed".format(query.data))
@@ -195,7 +208,6 @@ def get_current_SGtime():
     '''
     Return the current time in Singapore UTC+08:00
     '''
-
     return dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=8)))
 
 def get_SG_data(element):
