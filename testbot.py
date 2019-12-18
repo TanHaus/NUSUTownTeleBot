@@ -39,10 +39,10 @@ def show_open_stores(update, context):
     column_label_today = 'Term Opening Hours (' + today.strftime('%a') + ')'
     for index in opening_hours.index:
         store_opening_hours = opening_hours.loc[index, column_label_today]
-        if is_open_today(store_opening_hours):
+        if is_open_today(store_opening_hours) and store_opening_hours != 'Open':
             close_time = get_close_time(store_opening_hours)
             open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
-
+    open_stores += '- {}: open 24/7'.format(get_247_stores(opening_hours))
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
@@ -133,6 +133,10 @@ def handle_store(update, context):
         query.message.reply_text("{} is closed".format(query.data))
         when_store_open()
 
+    elif store_opening_hours == 'Open':
+        query.message.reply_text("{} is open".format(query.data))
+        query.message.reply_text('Opening hours: 24/7')
+
     elif is_open_today(store_opening_hours):
         query.message.reply_text("{} is open".format(query.data))
         query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
@@ -167,6 +171,9 @@ def is_open_today(store_opening_hours):
         else:
             if int(start_time)<=int(today.strftime('%H%M'))<int(end_time): return True
     
+    elif store_opening_hours == 'Open':
+        return True
+
     else:
         store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
         
@@ -243,6 +250,15 @@ def get_SG_data(element):
         return stations[station_id]
 
     return None
+
+def get_247_stores(opening_hours):
+    open247_stores = opening_hours[opening_hours['Term Opening Hours (Mon)']=='Open']['Store'].to_numpy()
+    open247_stores_str = ''
+    for store in open247_stores:
+        if open247_stores_str == '':
+            open247_stores_str += store
+        open247_stores_str = open247_stores_str + ', ' + store
+    return open247_stores_str
 
 ##########################
 #                        #
