@@ -46,10 +46,27 @@ def show_open_stores(update, context):
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
-    PSI = get_SG_data('PSI')['psi_twenty_four_hourly']['south']
-    PM25 = get_SG_data('PM2.5')['pm25_one_hourly']['south']
-    update.message.reply_text('PSI reading in UTown: {}'.format(PSI))
-    update.message.reply_text('PM2.5 reading in UTown: {}'.format(PM25))
+    update.message.reply_text('Getting data from Singapore\'s public data...')
+    try:
+        PSI = get_SG_data('PSI')
+        PM25 = get_SG_data('PM2.5')
+    except:
+        update.message.reply_text('There is an error getting data from Singapore\'s public data 🙁')
+        update.message.reply_text('Please try again later!')
+    else:
+        update.message.reply_text('PSI reading in UTown: {}'.format(PSI))
+        update.message.reply_text('PM2.5 reading in UTown: {}'.format(PM25))
+
+def weather(update, context):
+    update.message.reply_text('Getting data from Singapore\'s public data...')
+    try:
+        temp = get_SG_data('temperature')
+        humidity = get_SG_data('humidity')
+    except:
+        update.message.reply_text('There is an error getting data from Singapore public data 🙁')
+        update.message.reply_text('Please try again later!')
+    else:
+        update.message.reply_text('Temperature: {}°C 🌡️\nHumidity: {}% 💧'.format(temp, humidity))
 
 
 ##########################
@@ -183,19 +200,37 @@ def get_current_SGtime():
 
 def get_SG_data(element):
     '''
-    Get data from data.gov.sg
+    Get Singapore public data from https://data.gov.sg/
     '''
 
-    SG_data_URLs = {'PSI': 'https://api.data.gov.sg/v1/environment/psi',
-                    'PM2.5': 'https://api.data.gov.sg/v1/environment/pm25'}
+    element = element.lower()
+    data_types = {'psi': 'environment/psi',
+                  'pm2.5': 'environment/pm25',
+                  'temperature': 'environment/air-temperature',
+                  'rainfall': 'environment/rainfall',
+                  'humidity': 'environment/relative-humidity',
+                  'wind direction': 'environment/wind-direction',
+                  'wind speed': 'environment/wind-speed'}
+    
+    URL = 'https://api.data.gov.sg/v1/' + data_types[element]
+    station_id = 'S50'                          # station S50 is at Clementi Road
     
     today = get_current_SGtime()
     DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
-
-    URL = SG_data_URLs[element]
     PARAMS = {'date_time': DATE_TIME}
 
-    return requests.get(url = URL, params = PARAMS).json()['items'][0]['readings']
+    response = requests.get(url = URL, params = PARAMS).json()
+    readings = response['items'][0]['readings']
+
+    if element == 'psi': return readings['psi_twenty_four_hourly']['south']
+
+    elif element == 'pm2.5': return readings['pm25_one_hourly']['south']
+
+    elif element in ['temperature', 'rainfall', 'humidity', 'wind direction', 'wind speed']:
+        stations = {x['station_id']: x['value'] for x in readings}
+        return stations[station_id]
+
+    return None
 
 ##########################
 #                        #
@@ -223,6 +258,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("open", show_open_stores))
     dp.add_handler(CommandHandler("haze", haze))
+    dp.add_handler(CommandHandler("weather", weather))
     dp.add_handler(conv_handler)
 
     updater.start_polling()
