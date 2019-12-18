@@ -42,7 +42,7 @@ def show_open_stores(update, context):
         if is_open_today(store_opening_hours) and store_opening_hours != 'Open':
             close_time = get_close_time(store_opening_hours)
             open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
-    open_stores += '- {}: open 24/7'.format(get_247_stores(opening_hours))
+    open_stores += '- {}: <b>open 24/7</b> 🏪'.format(get_247_stores(opening_hours))
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
@@ -54,19 +54,31 @@ def haze(update, context):
         update.message.reply_text('There is an error getting data from Singapore\'s public data 🙁')
         update.message.reply_text('Please try again later!')
     else:
-        update.message.reply_text('PSI reading in UTown: {}'.format(PSI))
-        update.message.reply_text('PM2.5 reading in UTown: {}'.format(PM25))
+        descriptor = ''
+        if 0 <= PSI <= 50: descriptor = 'Good'
+        elif PSI <= 100: descriptor = 'Moderate'
+        elif PSI <= 200: descriptor = 'Unhealthy'
+        elif PSI <= 300: descriptor = 'Very unhealthy'
+        else: descriptor = 'Hazardous'
+
+        update.message.reply_text('PSI reading in UTown: {}\nPM2.5 reading in UTown: {}μ/m³\n\nStatus: {}'.format(PSI, PM25, descriptor))
+
+        if descriptor in ['Unhealthy', 'Very unhealthy']: update.message.reply_text('Please minimize outdoor activities! ❌🏃')
+        elif descriptor == 'Hazardous': update.message.reply_text('Please avoid all outdoor activities. Visit NEA for further instructions\n\nhttps://www.haze.gov.sg/')
 
 def weather(update, context):
     update.message.reply_text('Getting data from Singapore\'s public data...')
+    today = get_current_SGtime()
+    date = today.strftime('%A - %d %b, %Y')
     try:
         temp = get_SG_data('temperature')
         humidity = get_SG_data('humidity')
+        forecast = get_SG_data('weather forecast')
     except:
         update.message.reply_text('There is an error getting data from Singapore public data 🙁')
         update.message.reply_text('Please try again later!')
     else:
-        update.message.reply_text('Temperature: {}°C 🌡️\nHumidity: {}% 💧'.format(temp, humidity))
+        update.message.reply_text('<b>{}</b> at UTown\n\nTemperature: {}°C 🌡️\nHumidity: {}% 💧\nForecast: {}'.format(date, temp, humidity, forecast), parse_mode='html')
 
 
 ##########################
@@ -135,7 +147,7 @@ def handle_store(update, context):
 
     elif store_opening_hours == 'Open':
         query.message.reply_text("{} is open".format(query.data))
-        query.message.reply_text('Opening hours: 24/7')
+        query.message.reply_text('Opening hours: 24/7 🏪')
 
     elif is_open_today(store_opening_hours):
         query.message.reply_text("{} is open".format(query.data))
@@ -220,6 +232,8 @@ def get_current_SGtime():
 def get_SG_data(element):
     '''
     Get Singapore public data from https://data.gov.sg/
+
+    Accepted arguments: psi, pm2.5, temperature, rainfall, humidity, wind direction, wind speed, weather forecast
     '''
 
     element = element.lower()
@@ -229,25 +243,34 @@ def get_SG_data(element):
                   'rainfall': 'environment/rainfall',
                   'humidity': 'environment/relative-humidity',
                   'wind direction': 'environment/wind-direction',
-                  'wind speed': 'environment/wind-speed'}
-    
+                  'wind speed': 'environment/wind-speed',
+                  'weather forecast': 'environment/2-hour-weather-forecast'}
+    if element not in data_types.keys(): return None
+
     URL = 'https://api.data.gov.sg/v1/' + data_types[element]
-    station_id = 'S50'                          # station S50 is at Clementi Road
     
     today = get_current_SGtime()
     DATE_TIME = today.strftime('%Y-%m-%dT%H:%M:%S')
     PARAMS = {'date_time': DATE_TIME}
 
     response = requests.get(url = URL, params = PARAMS).json()
-    readings = response['items'][0]['readings']
+    data = response['items'][0]
 
-    if element == 'psi': return readings['psi_twenty_four_hourly']['south']
+    if element == 'psi': return data['readings']['psi_twenty_four_hourly']['south']
 
-    elif element == 'pm2.5': return readings['pm25_one_hourly']['south']
+    elif element == 'pm2.5': return data['readings']['pm25_one_hourly']['south']
 
     elif element in ['temperature', 'rainfall', 'humidity', 'wind direction', 'wind speed']:
-        stations = {x['station_id']: x['value'] for x in readings}
-        return stations[station_id]
+        stations = {x['station_id']: x['value'] for x in data['readings']}
+        ids = ['S50', 'S60', 'S116', 'S115']
+        for id in ids:
+            if stations.get(id) == None: continue
+            else: return stations[id]
+        return None
+
+    elif element == 'weather forecast': 
+        areas = {x['area']: x['forecast'] for x in data['forecasts']}
+        return areas['Queenstown']
 
     return None
 
