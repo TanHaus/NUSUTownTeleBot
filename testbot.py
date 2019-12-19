@@ -118,7 +118,7 @@ def handle_store(update, context):
     today = get_current_SGtime()
     query = update.callback_query
     store_opening_hours = get_opening_hours(query.data, today)
-    
+
     def when_store_open():
         next_day_text = 'later'
         store_opening_hours_next = store_opening_hours
@@ -161,9 +161,34 @@ def handle_store(update, context):
     else:
         query.message.reply_text("{} is closed".format(query.data))
         when_store_open()
-        
-    return
     
+    keyboard = [[InlineKeyboardButton('Yes', callback_data=query.data),
+                InlineKeyboardButton('No', callback_data='No')]]
+
+    query.message.reply_text('More information about {}?'.format(query.data), reply_markup = InlineKeyboardMarkup(keyboard))
+        
+    return 'handle_full_info'
+
+def handle_full_info(update, context):
+    query = update.callback_query
+    if query.data == 'No': return None
+
+    info = '<b>{}</b> - {}\n'.format(query.data, get_sub_category(query.data))
+    if get_category(query.data) == 'Food & Beverages': 
+        info += 'Halal Certified\n' if is_halal(query.data) else 'Not Halal Certified\n'
+    info += '{}\n\n'.format(get_location(query.data))
+
+    if query.data in open247_stores: info += 'Opening hours: 24/7\n'
+    else:
+        info += 'Opening hours:\n'
+        for day_in_week in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
+            hours = opening_hours[opening_hours.Store == query.data][day_in_week].iloc[0]
+            info += '    {}: {}\n'.format(day_in_week, hours)
+
+    query.message.reply_text(info, parse_mode='html')
+
+def error(update, context):
+    print('There is an error!\n{}'.format(context.error))
 
 ##########################
 #                        #
@@ -174,7 +199,7 @@ def handle_store(update, context):
 def get_opening_hours(store, date):
     store_info = opening_hours[opening_hours.Store==store]
     if is_PH(date) and store_info['PH'].iloc[0] != 'As usual':
-        store_opening_hours = store_info['PH']
+        store_opening_hours = store_info['PH'].iloc[0]
     else:
         store_opening_hours = store_info[date.strftime('%a')].iloc[0]
 
@@ -246,6 +271,24 @@ def get_close_time(index):
                 close_time = end_time_2
 
     return close_time
+
+def get_location(store):
+    store_info = opening_hours[opening_hours.Store==store]
+    return store_info['Location'].iloc[0]
+
+def is_halal(store):
+    store_info = opening_hours[opening_hours.Store==store]
+    halal = store_info['Halal Certified'].iloc[0]
+    if halal == 'Yes': return True
+    return False
+
+def get_category(store):
+    store_info = opening_hours[opening_hours.Store==store]
+    return store_info['Category'].iloc[0]
+
+def get_sub_category(store):
+    store_info = opening_hours[opening_hours.Store==store]
+    return store_info['Sub-Category'].iloc[0]
 
 def get_current_SGtime():
     '''
@@ -323,7 +366,7 @@ def is_PH(date):
     '''
     if isinstance(date, str) and (date in public_holidays): return True
     if isinstance(date, dt.datetime) and (date.strftime('%Y%m%d') in public_holidays): return True
-    
+
     return False
  
 ##########################
@@ -342,7 +385,8 @@ def main():
         entry_points=[CommandHandler('stores', show_stores)],
         states={
             'handle_category': [CallbackQueryHandler(handle_category)],
-            'handle_store': [CallbackQueryHandler(handle_store)]
+            'handle_store': [CallbackQueryHandler(handle_store)],
+            'handle_full_info': [CallbackQueryHandler(handle_full_info)]
         },
         fallbacks=[CommandHandler("stores", show_stores)]
     )
@@ -354,6 +398,7 @@ def main():
     dp.add_handler(CommandHandler("haze", haze))
     dp.add_handler(CommandHandler("weather", weather))
     dp.add_handler(conv_handler)
+    dp.add_error_handler(error)
 
     updater.start_polling()
     updater.idle()
