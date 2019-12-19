@@ -36,9 +36,8 @@ def show_stores(update, context):
 def show_open_stores(update, context):
     today = get_current_SGtime()
     open_stores = ''
-    column_label_today = 'Term Opening Hours (' + today.strftime('%a') + ')'
     for index in opening_hours.index:
-        store_opening_hours = opening_hours.loc[index, column_label_today]
+        store_opening_hours = opening_hours.loc[index, today.strftime('%a')]
         if is_open_today(store_opening_hours) and store_opening_hours != 'Open':
             close_time = get_close_time(store_opening_hours)
             open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
@@ -112,7 +111,7 @@ def handle_category(update, context):
 def handle_store(update, context):
     today = get_current_SGtime()
     query = update.callback_query
-    store_opening_hours = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + today.strftime('%a') + ')'].iloc[0]
+    store_opening_hours = opening_hours[opening_hours.Store==query.data][today.strftime('%a')].iloc[0]
     
     def when_store_open():
         next_day_text = 'later'
@@ -127,11 +126,11 @@ def handle_store(update, context):
         else:
             tomorrow = True
             next_day = today + dt.timedelta(days=1)
-            store_opening_hours_next = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
+            store_opening_hours_next = opening_hours[opening_hours.Store==query.data][next_day.strftime('%a')].iloc[0]
 
             while(store_opening_hours_next == 'Closed'):
                 next_day = next_day + dt.timedelta(days=1)
-                store_opening_hours_next = opening_hours[opening_hours.Store==query.data]['Term Opening Hours (' + next_day.strftime('%a') + ')'].iloc[0]
+                store_opening_hours_next = opening_hours[opening_hours.Store==query.data][next_day.strftime('%a')].iloc[0]
                 tomorrow = False
         
             if tomorrow: 
@@ -275,7 +274,7 @@ def get_SG_data(element):
     return None
 
 def get_247_stores(opening_hours):
-    open247_stores = opening_hours[opening_hours['Term Opening Hours (Mon)']=='Open']['Store'].to_numpy()
+    open247_stores = opening_hours[opening_hours[Mon]=='Open']['Store'].to_numpy()
     open247_stores_str = ''
     for store in open247_stores:
         if open247_stores_str == '':
