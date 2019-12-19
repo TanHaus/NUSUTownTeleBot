@@ -39,15 +39,15 @@ def show_open_stores(update, context):
     for index in opening_hours.index:
         store_opening_hours = opening_hours.loc[index, today.strftime('%a')]
         if is_open_today(store_opening_hours) and store_opening_hours != 'Open':
-            close_time = get_close_time(store_opening_hours, index)
+            close_time = get_close_time(index)
             open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
-    get_247_stores_str = ''
-    for store in get_247_stores(opening_hours):
-        if get_247_stores_str == '':
-            get_247_stores_str += store
-        else:
-            get_247_stores_str = get_247_stores_str + ', ' + store
-    open_stores += '- {}: <b>Open 24/7</b> 🏪'.format(get_247_stores_str)
+    
+    str247_stores = open247_stores[0]
+    for store in open247_stores[1:]:
+        str247_stores = str247_stores + ', ' + store
+    
+    open_stores += '- {}: <b>Open 24/7</b> 🏪'.format(str247_stores)
+
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
@@ -215,12 +215,13 @@ def is_open_today(store_opening_hours):
     
     return False
 
-def get_close_time(store_opening_hours, index):
+def get_close_time(index):
     '''
     Get closing time those in the format of 'HHMM-HHMM' and 'HHMM-HHMM, HHMM-HHMM'
     '''
     close_time = ''
     today = get_current_SGtime()
+    store_opening_hours = opening_hours.loc[index, today.strftime('%a')]
     next_day = today + dt.timedelta(days=1)
 
     if len(store_opening_hours) == 9:
@@ -315,18 +316,16 @@ def get_PH():
     return PH
 
 def is_PH(date):
+    '''
+    Check if the given date is a public holiday
+
+    Accept both a string 'YYYYMMDD' and a datetime object
+    '''
     if isinstance(date, str) and (date in public_holidays): return True
     if isinstance(date, dt.datetime) and (date.strftime('%Y%m%d') in public_holidays): return True
+    
     return False
  
-
-def get_247_stores(opening_hours):
-    open247_stores = opening_hours[opening_hours['Mon']=='Open']['Store'].to_numpy()
-    open247_stores_list = []
-    for store in open247_stores:
-        open247_stores_list.append(store)
-    return open247_stores_list
-
 ##########################
 #                        #
 #      Main program      #
@@ -363,7 +362,10 @@ if __name__=='__main__':
     # Create Pandas Dataframe
     opening_hours = pd.read_excel('Utown Outlets Opening Hours.xlsx',
                                   header=0, index_col=False, keep_default_na=True)
+                                  
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
     public_holidays = get_PH()
+    open247_stores = opening_hours[opening_hours['Mon']=='Open']['Store'].tolist()
+
     main()
