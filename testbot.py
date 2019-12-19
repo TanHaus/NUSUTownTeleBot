@@ -282,6 +282,17 @@ def get_SG_data(element):
 
     return None
 
+def get_PH():
+    '''
+    Get a list of Public holidays in Singapore from Ministry of Manpower https://www.mom.gov.sg/
+    '''
+    response = requests.get(url='https://www.mom.gov.sg/-/media/mom/documents/employment-practices/public-holidays/public-holidays-sg-2020.ics')
+    raw = response.text
+    events = raw.split('BEGIN:VEVENT\r\n')[1:]
+    for event in events:
+        index_date = event.find('DTSTART')
+        date = event[index_date+19, index_date+27]
+
 def get_247_stores(opening_hours):
     open247_stores = opening_hours[opening_hours['Mon']=='Open']['Store'].to_numpy()
     open247_stores_str = ''
