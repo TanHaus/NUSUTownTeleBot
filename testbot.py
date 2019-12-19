@@ -41,7 +41,13 @@ def show_open_stores(update, context):
         if is_open_today(store_opening_hours) and store_opening_hours != 'Open':
             close_time = get_close_time(store_opening_hours, index)
             open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
-    open_stores += '- {}: <b>Open 24/7</b> 🏪'.format(get_247_stores(opening_hours))
+    get_247_stores_str = ''
+    for store in get_247_stores(opening_hours):
+        if get_247_stores_str == '':
+            get_247_stores_str += store
+        else:
+            get_247_stores_str = get_247_stores_str + ', ' + store
+    open_stores += '- {}: <b>Open 24/7</b> 🏪'.format(get_247_stores_str)
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
@@ -111,7 +117,7 @@ def handle_category(update, context):
 def handle_store(update, context):
     today = get_current_SGtime()
     query = update.callback_query
-    store_opening_hours = opening_hours[opening_hours.Store==query.data][today.strftime('%a')].iloc[0]
+    store_opening_hours = get_opening_hours(query.data, today)
     
     def when_store_open():
         next_day_text = 'later'
@@ -126,11 +132,11 @@ def handle_store(update, context):
         else:
             tomorrow = True
             next_day = today + dt.timedelta(days=1)
-            store_opening_hours_next = opening_hours[opening_hours.Store==query.data][next_day.strftime('%a')].iloc[0]
+            store_opening_hours_next = get_opening_hours(query.data, next_day)
 
             while(store_opening_hours_next == 'Closed'):
                 next_day = next_day + dt.timedelta(days=1)
-                store_opening_hours_next = opening_hours[opening_hours.Store==query.data][next_day.strftime('%a')].iloc[0]
+                store_opening_hours_next = get_opening_hours(query.data, next_day)
                 tomorrow = False
         
             if tomorrow: 
@@ -164,6 +170,15 @@ def handle_store(update, context):
 #    Helper functions    #
 #                        #
 ##########################
+
+def get_opening_hours(store, date):
+    store_info = opening_hours[opening_hours.Store==store]
+    if is_PH(date) and store_info['PH'].iloc[0] != 'As usual':
+        store_opening_hours = store_info['PH']
+    else:
+        store_opening_hours = store_info[date.strftime('%a')].iloc[0]
+
+    return store_opening_hours
 
 def is_open_today(store_opening_hours):
     '''
@@ -289,18 +304,28 @@ def get_PH():
     response = requests.get(url='https://www.mom.gov.sg/-/media/mom/documents/employment-practices/public-holidays/public-holidays-sg-2020.ics')
     raw = response.text
     events = raw.split('BEGIN:VEVENT\r\n')[1:]
+    PH = {}
     for event in events:
         index_date = event.find('DTSTART')
-        date = event[index_date+19, index_date+27]
+        date = event[index_date+19: index_date+27]
+        name_i = event.find('SUMMARY')
+        name_f = event.find('END:VEVENT')
+        name = event[name_i+8: name_f-2]
+        PH[date] = name
+    return PH
+
+def is_PH(date):
+    if isinstance(date, str) and (date in public_holidays): return True
+    if isinstance(date, dt.datetime) and (date.strftime('%Y%m%d') in public_holidays): return True
+    return False
+ 
 
 def get_247_stores(opening_hours):
     open247_stores = opening_hours[opening_hours['Mon']=='Open']['Store'].to_numpy()
-    open247_stores_str = ''
+    open247_stores_list = []
     for store in open247_stores:
-        if open247_stores_str == '':
-            open247_stores_str += store
-        open247_stores_str = open247_stores_str + ', ' + store
-    return open247_stores_str
+        open247_stores_list.append(store)
+    return open247_stores_list
 
 ##########################
 #                        #
@@ -340,5 +365,5 @@ if __name__=='__main__':
                                   header=0, index_col=False, keep_default_na=True)
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
-
+    public_holidays = get_PH()
     main()
