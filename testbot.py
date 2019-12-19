@@ -39,9 +39,9 @@ def show_open_stores(update, context):
     for index in opening_hours.index:
         store_opening_hours = opening_hours.loc[index, today.strftime('%a')]
         if is_open_today(store_opening_hours) and store_opening_hours != 'Open':
-            close_time = get_close_time(store_opening_hours)
+            close_time = get_close_time(store_opening_hours, index)
             open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
-    open_stores += '- {}: <b>open 24/7</b> 🏪'.format(get_247_stores(opening_hours))
+    open_stores += '- {}: <b>Open 24/7</b> 🏪'.format(get_247_stores(opening_hours))
     update.message.reply_text('The following stores are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
@@ -200,27 +200,36 @@ def is_open_today(store_opening_hours):
     
     return False
 
-def get_close_time(store_opening_hours):
+def get_close_time(store_opening_hours, index):
     '''
     Get closing time those in the format of 'HHMM-HHMM' and 'HHMM-HHMM, HHMM-HHMM'
     '''
+    close_time = ''
+    today = get_current_SGtime()
+    next_day = today + dt.timedelta(days=1)
 
     if len(store_opening_hours) == 9:
-        close_time = store_opening_hours.split('-')[-1]
-        if close_time == '2359': return 'midnight'
-        return close_time
+        if store_opening_hours.split('-')[-1] == '2359': 
+            store_opening_hours_next = opening_hours.loc[index, next_day.strftime('%a')]
+            close_time = store_opening_hours_next[5:9]
+        else:
+            close_time = store_opening_hours.split('-')[-1]
     
     else:
-        today = get_current_SGtime()
-        store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
-        
-        start_time_1, end_time_1 = store_opening_hours_1.split('-')
-    
-        if int(start_time_1)<=int(today.strftime('%H%M'))<int(end_time_1): return end_time_1
-
+        store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ') 
+        end_time_1 = store_opening_hours_1.split('-')[-1]
         end_time_2 = store_opening_hours_2.split('-')[-1]
-        if end_time_2 == '2359': return 'midnight'
-        return end_time_2
+    
+        if int(today.strftime('%H%M'))<int(end_time_1): 
+            close_time = end_time_1
+        else:
+            if end_time_2 == '2359': 
+                store_opening_hours_next = opening_hours.loc[index, next_day.strftime('%a')]
+                close_time = store_opening_hours_next[5:9]
+            else:
+                close_time = end_time_2
+
+    return close_time
 
 def get_current_SGtime():
     '''
@@ -274,7 +283,7 @@ def get_SG_data(element):
     return None
 
 def get_247_stores(opening_hours):
-    open247_stores = opening_hours[opening_hours[Mon]=='Open']['Store'].to_numpy()
+    open247_stores = opening_hours[opening_hours['Mon']=='Open']['Store'].to_numpy()
     open247_stores_str = ''
     for store in open247_stores:
         if open247_stores_str == '':
