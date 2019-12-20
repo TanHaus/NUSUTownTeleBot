@@ -144,48 +144,46 @@ def handle_store(update, context):
             else:
                 next_day_text = 'on ' + next_day.strftime('%A')
         
-        query.message.reply_text('But you can still visit {} {} from {} 😊'.format(query.data, next_day_text, store_opening_hours_next))
+        return 'But you can still visit {} {} from {} 😊'.format(query.data, next_day_text, store_opening_hours_next)
 
-    if store_opening_hours == 'Closed':
-        query.message.reply_text("{} is closed".format(query.data))
-        when_store_open()
+    # if store_opening_hours == 'Closed':
+    #     query.message.reply_text("{} is closed".format(query.data))
+    #     when_store_open()
 
-    elif store_opening_hours == 'Open':
-        query.message.reply_text("{} is open".format(query.data))
-        query.message.reply_text('Opening hours: 24/7 🏪')
+    # elif store_opening_hours == 'Open':
+    # #     query.message.reply_text("{} is open".format(query.data))
+    # #     query.message.reply_text('Opening hours: 24/7 🏪')
+    #     pass
 
-    elif is_open_today(store_opening_hours):
-        query.message.reply_text("{} is open".format(query.data))
-        query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
+    # elif is_open_today(store_opening_hours):
+    #     index = opening_hours[opening_hours.Store == query.data].index[0]
+    #     query.message.reply_text("{} is open until {}.".format(query.data, get_close_time(index)))
+    #     # query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
 
-    else:
-        query.message.reply_text("{} is closed".format(query.data))
-        when_store_open()
+    # else:
+    #     query.message.reply_text("{} is closed.\n{}".format(query.data, when_store_open()))
     
-    keyboard = [[InlineKeyboardButton('Yes', callback_data=query.data),
-                InlineKeyboardButton('No', callback_data='No')]]
-
-    query.message.reply_text('More information about {}?'.format(query.data), reply_markup = InlineKeyboardMarkup(keyboard))
-        
-    return 'handle_full_info'
-
-def handle_full_info(update, context):
-    query = update.callback_query
-    if query.data == 'No': return None
-
     info = '<b>{}</b> - {}\n'.format(query.data, get_sub_category(query.data))
     if get_category(query.data) == 'Food & Beverages': 
         info += 'Halal Certified\n' if is_halal(query.data) else 'Not Halal Certified\n'
-    info += '{}\n\n'.format(get_location(query.data))
+    info += 'Located in: {}\n\n'.format(get_location(query.data))
 
-    if query.data in open247_stores: info += 'Opening hours: 24/7\n'
+    if query.data in open247_stores: info += 'Opening hours: Open (24/7 🏪)\n'
     else:
-        info += 'Opening hours:\n'
+        info += 'Opening hours: '
+        if store_opening_hours == 'Closed': info += 'Closed right now. {}\n'.format(when_store_open())
+        elif is_open_today(store_opening_hours):
+            index = opening_hours[opening_hours.Store == query.data].index[0]
+            info += "Open until {}.".format(get_close_time(index))
+        else: info += 'Closed right now. {}\n'.format(when_store_open())
+        
         for day_in_week in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
             hours = opening_hours[opening_hours.Store == query.data][day_in_week].iloc[0]
-            info += '    {}: {}\n'.format(day_in_week, hours)
+            info += '    {}{}: {}\n'.format(day_in_week, ' (today)' if day_in_week == today.strftime('%a') else '', hours)
 
     query.message.reply_text(info, parse_mode='html')
+
+    return None
 
 def error(update, context):
     print('There is an error!\n{}'.format(context.error))
@@ -385,8 +383,7 @@ def main():
         entry_points=[CommandHandler('stores', show_stores)],
         states={
             'handle_category': [CallbackQueryHandler(handle_category)],
-            'handle_store': [CallbackQueryHandler(handle_store)],
-            'handle_full_info': [CallbackQueryHandler(handle_full_info)]
+            'handle_store': [CallbackQueryHandler(handle_store)]]
         },
         fallbacks=[CommandHandler("stores", show_stores)]
     )
