@@ -170,13 +170,14 @@ def handle_store(update, context):
 
     if query.data in open247_stores: info += 'Opening hours: Open (24/7 🏪)\n'
     else:
-        info += 'Opening hours: '
-        if store_opening_hours == 'Closed': info += 'Closed right now. {}\n'.format(when_store_open())
+        info += 'Opening status: '
+        if store_opening_hours == 'Closed': info += 'Closed right now. {}\n\n'.format(when_store_open())
         elif is_open_today(store_opening_hours):
             index = opening_hours[opening_hours.Store == query.data].index[0]
-            info += "Open until {}.".format(get_close_time(index))
-        else: info += 'Closed right now. {}\n'.format(when_store_open())
+            info += "Open until {}\n\n".format(get_close_time(index))
+        else: info += 'Closed right now. {}\n\n'.format(when_store_open())
         
+        info += 'Opening hours:\n'
         for day_in_week in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
             hours = opening_hours[opening_hours.Store == query.data][day_in_week].iloc[0]
             info += '    {}{}: {}\n'.format(day_in_week, ' (today)' if day_in_week == today.strftime('%a') else '', hours)
@@ -383,7 +384,7 @@ def main():
         entry_points=[CommandHandler('stores', show_stores)],
         states={
             'handle_category': [CallbackQueryHandler(handle_category)],
-            'handle_store': [CallbackQueryHandler(handle_store)]]
+            'handle_store': [CallbackQueryHandler(handle_store)]
         },
         fallbacks=[CommandHandler("stores", show_stores)]
     )
