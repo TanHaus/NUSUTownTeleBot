@@ -41,7 +41,7 @@ def show_open_stores(update, context):
         if is_open_today(store_opening_hours) and store_opening_hours != 'Open':
             close_time = get_close_time(index)
             open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
-    
+
     str247_stores = open247_stores[0]
     for store in open247_stores[1:]:
         str247_stores = str247_stores + ', ' + store
@@ -223,6 +223,9 @@ def is_open_today(store_opening_hours):
     
     elif store_opening_hours == 'Open':
         return True
+
+    elif store_opening_hours == 'Closed':
+        return False
 
     else:
         store_opening_hours_1, store_opening_hours_2 = store_opening_hours.split(', ')
