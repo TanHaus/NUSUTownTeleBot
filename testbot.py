@@ -13,14 +13,14 @@ import pandas as pd
 ##########################
 
 def start(update, context):
-    update.message.reply_text("Welcome to the NUS Utown TeleBot!\n" +
-    "Ever been hungry in the middle of the night and dying to know which food stores are still open? " +
-    "Or wondered to know what are the retail and sporting options here in Utown?\n" 
-    "Then you have come to the right place. Created by TanHaus, this Bot aims to provide useful information about the shops and amenities available in the Utown Campus. " +
-    "To help you enhance your Utown experience, you may find the following commands useful:\n" +
-    "/stores: Shows the directory of Utown shops and amenities."
-    "\n/open: Shows all stores that are currently open."
-    "\n/temp: Shows current air temperature.")
+    update.message.reply_text("<b> Welcome to the NUS UTown TeleBot! </b> \n\n" +
+    ## "Ever been hungry in the middle of the night and dying to know which food stores are still open? " +
+    ## "Or wondered to know what are the retail and sporting options here in Utown?\n" 
+    ## "Then you have come to the right place. "
+    "Created by TanHaus, this Bot aims to provide information about the shops and amenities available in the UTown Campus.\n\n" +
+    "To enhance your UTown experience, you may find the following commands useful: \n" +
+    "/stores: Shows the directory of UTown shops and amenities.\n"
+    "/open: Shows all stores that are currently open.\n", parse_mode = 'html')
 
 def show_stores(update, context):
     keyboard = []
@@ -29,7 +29,7 @@ def show_stores(update, context):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text('Please choose a category', reply_markup = reply_markup)
+    update.message.reply_text('Select Category', reply_markup = reply_markup)
 
     return 'handle_category'
 
@@ -40,7 +40,7 @@ def show_open_stores(update, context):
         store_opening_hours = opening_hours.loc[index, today.strftime('%a')]
         if is_open_today(store_opening_hours) and store_opening_hours != 'Open':
             close_time = get_close_time(index)
-            open_stores += '- {} until <b>{}</b>\n'.format(opening_hours.loc[index, 'Store'], close_time)
+            open_stores += '- {} (until <b>{}</b>)\n'.format(opening_hours.loc[index, 'Store'], close_time)
 
     str247_stores = open247_stores[0]
     for store in open247_stores[1:]:
@@ -48,7 +48,7 @@ def show_open_stores(update, context):
     
     open_stores += '- {}: <b>Open 24/7</b> 🏪'.format(str247_stores)
 
-    update.message.reply_text('The following stores are still open:\n{}'.format(open_stores), parse_mode='html')
+    update.message.reply_text('The following stores/amenities are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
     update.message.reply_text('Getting data from Singapore\'s public data...')
@@ -102,7 +102,7 @@ def handle_category(update, context):
     
     query.edit_message_text('Please choose a category', reply_markup = reply_markup)
     '''
-    query.message.reply_text("Selected option: {}".format(query.data))
+    query.message.reply_text("Selected Category: {}".format(query.data))
 
     keyboard = []
     for i in opening_hours[opening_hours['Category']==query.data]['Store']:
@@ -110,7 +110,10 @@ def handle_category(update, context):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    query.message.reply_text('Please choose a store', reply_markup = reply_markup)
+    if query.data == 'Food & Beverages' or query.data == 'Retail':
+        query.message.reply_text('Select Store', reply_markup = reply_markup)
+    else: 
+        query.message.reply_text('Select Amenity', reply_markup = reply_markup)
 
     return 'handle_store'
 
@@ -163,18 +166,18 @@ def handle_store(update, context):
     # else:
     #     query.message.reply_text("{} is closed.\n{}".format(query.data, when_store_open()))
     
-    info = '<b>{}</b> - {}\n'.format(query.data, get_sub_category(query.data))
+    info = '<b>{}</b> {}\n'.format(query.data, get_sub_category(query.data))
     if get_category(query.data) == 'Food & Beverages': 
         info += 'Halal Certified\n' if is_halal(query.data) else 'Not Halal Certified\n'
     info += 'Located in: {}\n\n'.format(get_location(query.data))
 
-    if query.data in open247_stores: info += 'Opening hours: Open (24/7 🏪)\n'
+    if query.data in open247_stores: info += 'Opening hours: Open 24/7 🏪\n'
     else:
         info += 'Opening status: '
         if store_opening_hours == 'Closed': info += 'Closed right now. {}\n\n'.format(when_store_open())
         elif is_open_today(store_opening_hours):
             index = opening_hours[opening_hours.Store == query.data].index[0]
-            info += "Open until {}\n\n".format(get_close_time(index))
+            info += "Open (until <b>{}</b>)\n\n".format(get_close_time(index))
         else: info += 'Closed right now. {}\n\n'.format(when_store_open())
         
         info += 'Opening hours:\n'
@@ -290,7 +293,10 @@ def get_category(store):
 
 def get_sub_category(store):
     store_info = opening_hours[opening_hours.Store==store]
-    return store_info['Sub-Category'].iloc[0]
+    if store_info['Sub-Category'].iloc[0] == '-':
+        return ''
+    else:
+        return "- " + store_info['Sub-Category'].iloc[0]
 
 def get_current_SGtime():
     '''
@@ -389,7 +395,7 @@ def main():
             'handle_category': [CallbackQueryHandler(handle_category)],
             'handle_store': [CallbackQueryHandler(handle_store)]
         },
-        fallbacks=[CommandHandler("stores", show_stores)]
+        fallbacks=[CommandHandler('stores', show_stores)]
     )
 
     dp = updater.dispatcher
