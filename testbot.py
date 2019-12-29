@@ -407,7 +407,12 @@ def main():
     dp.add_handler(conv_handler)
     dp.add_error_handler(error)
 
-    updater.start_polling()
+    port = int(os.environ.get('PORT', '8443'))
+
+    updater.start_webhook(listen='0.0.0.0',
+                          port=port,
+                          url_path=token)
+    updater.bot.set_webhook("https://nus-utown.herokuapp.com/{}".format(token))
     updater.idle()
 
 if __name__=='__main__':
