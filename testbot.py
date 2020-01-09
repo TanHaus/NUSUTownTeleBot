@@ -14,10 +14,7 @@ import pandas as pd
 
 def start(update, context):
     update.message.reply_text("<b> Welcome to the NUS UTown TeleBot! </b> \n\n" +
-    ## "Ever been hungry in the middle of the night and dying to know which food stores are still open? " +
-    ## "Or wondered to know what are the retail and sporting options here in Utown?\n" 
-    ## "Then you have come to the right place. "
-    "Created by TanHaus, this Bot aims to provide information about the shops and amenities available in the UTown Campus.\n\n" +
+    "This Bot aims to provide information about the shops and amenities available in the UTown Campus.\n\n" +
     "To enhance your UTown experience, you may find the following commands useful: \n" +
     "/stores: Shows the directory of UTown shops and amenities.\n"
     "/open: Shows all stores that are currently open.\n", parse_mode = 'html')
@@ -94,14 +91,6 @@ def weather(update, context):
 
 def handle_category(update, context):
     query = update.callback_query
-    '''
-    keyboard = []
-    for i in categories:
-        keyboard.append([InlineKeyboardButton(i)])
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    query.edit_message_text('Please choose a category', reply_markup = reply_markup)
-    '''
     query.message.edit_text("Selected Category: {}".format(query.data))
 
     keyboard = []
@@ -149,22 +138,6 @@ def handle_store(update, context):
         
         return 'But you can still visit {} {} from {} 😊'.format(query.data, next_day_text, store_opening_hours_next)
 
-    # if store_opening_hours == 'Closed':
-    #     query.message.reply_text("{} is closed".format(query.data))
-    #     when_store_open()
-
-    # elif store_opening_hours == 'Open':
-    # #     query.message.reply_text("{} is open".format(query.data))
-    # #     query.message.reply_text('Opening hours: 24/7 🏪')
-    #     pass
-
-    # elif is_open_today(store_opening_hours):
-    #     index = opening_hours[opening_hours.Store == query.data].index[0]
-    #     query.message.reply_text("{} is open until {}.".format(query.data, get_close_time(index)))
-    #     # query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
-
-    # else:
-    #     query.message.reply_text("{} is closed.\n{}".format(query.data, when_store_open()))
     
     info = '<b>{}</b> {}\n'.format(query.data, get_sub_category(query.data))
     if get_category(query.data) == 'Food & Beverages': 
@@ -407,14 +380,14 @@ def main():
     dp.add_handler(conv_handler)
     dp.add_error_handler(error)
 
-    # port = int(os.environ.get('PORT', '8443'))
-
-    # updater.start_webhook(listen='0.0.0.0',
-    #                       port=port,
-    #                       url_path=token)
-    # updater.bot.set_webhook("https://nus-utown.herokuapp.com/{}".format(token))
-
-    updater.start_polling()
+    port = os.environ.get('PORT', 'None')
+    if port!='None':
+        updater.start_webhook(listen='0.0.0.0',
+                            port=int(port),
+                            url_path=token)
+        updater.bot.set_webhook("https://nus-utown.herokuapp.com/{}".format(token))
+    else:
+        updater.start_polling()
 
     updater.idle()
 
