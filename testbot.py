@@ -16,10 +16,10 @@ def start(update, context):
     update.message.reply_text("<b> Welcome to the NUS UTown TeleBot! </b> \n\n" +
     "This Bot aims to provide information about the shops and amenities available in the UTown Campus.\n\n" +
     "To enhance your UTown experience, you may find the following commands useful: \n" +
-    "/stores: UTown directory.\n"
-    "/open: Shops currently open.\n"
-    "/weather: Weather conditions in UTown"
-    "/haze: Haze conditions in UTown", parse_mode = 'html')
+    "/stores: UTown directory\n"
+    "/open: Shops currently open\n"
+    "/weather: Weather conditions in UTown\n"
+    "/haze: Haze conditions in UTown\n", parse_mode = 'html')
 
 def show_stores(update, context):
     keyboard = []
