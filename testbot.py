@@ -102,7 +102,7 @@ def handle_category(update, context):
     
     query.edit_message_text('Please choose a category', reply_markup = reply_markup)
     '''
-    query.message.reply_text("Selected Category: {}".format(query.data))
+    query.message.edit_text("Selected Category: {}".format(query.data))
 
     keyboard = []
     for i in opening_hours[opening_hours['Category']==query.data]['Store']:
@@ -185,7 +185,7 @@ def handle_store(update, context):
             hours = opening_hours[opening_hours.Store == query.data][day_in_week].iloc[0]
             info += '    {}{}: {}\n'.format(day_in_week, ' (today)' if day_in_week == today.strftime('%a') else '', hours)
 
-    query.message.reply_text(info, parse_mode='html')
+    query.message.edit_text(info, parse_mode='html')
 
     return None
 
@@ -407,12 +407,15 @@ def main():
     dp.add_handler(conv_handler)
     dp.add_error_handler(error)
 
-    port = int(os.environ.get('PORT', '8443'))
+    # port = int(os.environ.get('PORT', '8443'))
 
-    updater.start_webhook(listen='0.0.0.0',
-                          port=port,
-                          url_path=token)
-    updater.bot.set_webhook("https://nus-utown.herokuapp.com/{}".format(token))
+    # updater.start_webhook(listen='0.0.0.0',
+    #                       port=port,
+    #                       url_path=token)
+    # updater.bot.set_webhook("https://nus-utown.herokuapp.com/{}".format(token))
+
+    updater.start_polling()
+
     updater.idle()
 
 if __name__=='__main__':
