@@ -19,7 +19,9 @@ def start(update, context):
     "/stores: UTown directory\n"
     "/open: Shops currently open\n"
     "/weather: Weather conditions in UTown\n"
-    "/haze: Haze conditions in UTown\n", parse_mode = 'html')
+    "/haze: Haze conditions in UTown\n"
+    "/feedback: Enter feedback for the bot\n\n"
+    "<b>Disclaimer</b>: The opening hours reported by this bot are not applicable during Public Holidays and School Holidays.\n", parse_mode = 'html')
 
 def show_stores(update, context):
     keyboard = []
@@ -65,6 +67,8 @@ def haze(update, context):
         elif PSI <= 300: descriptor = 'Very unhealthy'
         else: descriptor = 'Hazardous'
 
+        if PSI == None: PSI == 'NA'
+        if PM25 == None: PM25 == 'NA'
         update.message.reply_text('PSI reading in UTown: {}\nPM2.5 reading in UTown: {}μ/m³\n\nStatus: {}'.format(PSI, PM25, descriptor))
 
         if descriptor in ['Unhealthy', 'Very unhealthy']: update.message.reply_text('Please minimize outdoor activities! ❌🏃')
@@ -82,8 +86,10 @@ def weather(update, context):
         update.message.reply_text('There is an error getting data from Singapore public data 🙁')
         update.message.reply_text('Please try again later!')
     else:
-        update.message.reply_text('<b>{}</b> at UTown\n\nTemperature: {}°C 🌡️\nHumidity: {}% 💧\nForecast: {}'.format(date, temp, humidity, forecast), parse_mode='html')
-
+        if temp == None: temp = 'NA'
+        if humidity == None: humidity = 'NA'
+        if forecast == None: forecast = 'NA'
+        update.message.reply_text('<b>{}</b> at UTown\n\nTemperature (°C): {} 🌡️\nHumidity (%): {} 💧\nForecast: {}'.format(date, temp, humidity, forecast), parse_mode='html')
 
 ##########################
 #                        #
