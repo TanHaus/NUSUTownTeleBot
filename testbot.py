@@ -19,8 +19,7 @@ def start(update, context):
     "/stores: UTown directory\n"
     "/open: Shops currently open\n"
     "/weather: Weather conditions in UTown\n"
-    "/haze: Haze conditions in UTown\n"
-    "/feedback: Enter feedback for the bot\n\n"
+    "/haze: Haze conditions in UTown\n\n"
     "<b>Disclaimer</b>: The opening hours reported by this bot are not applicable during Public Holidays and School Holidays.\n", parse_mode = 'html')
 
 def show_stores(update, context):
