@@ -18,7 +18,6 @@ def start(update, context):
     "To enhance your UTown experience, you may find the following commands useful: \n" +
     "/stores: UTown directory\n"
     "/open: Shops currently open\n"
-    "/weather: Weather conditions in UTown\n"
     "/haze: Haze conditions in UTown\n\n"
     "<b>Disclaimer</b>: The opening hours reported by this bot are not applicable during Public Holidays and School Holidays.\n", parse_mode = 'html')
 
