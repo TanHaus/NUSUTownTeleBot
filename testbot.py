@@ -50,13 +50,12 @@ def show_open_stores(update, context):
     update.message.reply_text('The following stores/amenities are still open:\n{}'.format(open_stores), parse_mode='html')
 
 def haze(update, context):
-    update.message.reply_text('Getting data from Singapore\'s public data...')
+    haze_message = update.message.reply_text('Getting data from Singapore\'s public data...')
     try:
         PSI = get_SG_data('PSI')
         PM25 = get_SG_data('PM2.5')
     except:
-        update.message.reply_text('There is an error getting data from Singapore\'s public data 🙁')
-        update.message.reply_text('Please try again later!')
+        haze_message.edit_text('There is an error getting data from Singapore\'s public data 🙁\nPlease try again later!')
     else:
         descriptor = ''
         if 0 <= PSI <= 50: descriptor = 'Good'
@@ -67,13 +66,13 @@ def haze(update, context):
 
         if PSI == None: PSI == 'NA'
         if PM25 == None: PM25 == 'NA'
-        update.message.reply_text('PSI reading in UTown: {}\nPM2.5 reading in UTown: {}μ/m³\n\nStatus: {}'.format(PSI, PM25, descriptor))
+        haze_message.edit_text('PSI reading in UTown: {}\nPM2.5 reading in UTown: {}μ/m³\n\nStatus: {}'.format(PSI, PM25, descriptor))
 
         if descriptor in ['Unhealthy', 'Very unhealthy']: update.message.reply_text('Please minimize outdoor activities! ❌🏃')
         elif descriptor == 'Hazardous': update.message.reply_text('Please avoid all outdoor activities. Visit NEA for further instructions\n\nhttps://www.haze.gov.sg/')
 
 def weather(update, context):
-    update.message.reply_text('Getting data from Singapore\'s public data...')
+    weather_message = update.message.reply_text('Getting data from Singapore\'s public data...')
     today = get_current_SGtime()
     date = today.strftime('%A - %d %b, %Y')
     try:
@@ -81,13 +80,12 @@ def weather(update, context):
         humidity = get_SG_data('humidity')
         forecast = get_SG_data('weather forecast')
     except:
-        update.message.reply_text('There is an error getting data from Singapore public data 🙁')
-        update.message.reply_text('Please try again later!')
+        weather_message.edit_text('There is an error getting data from Singapore\'s public data 🙁\nPlease try again later!')
     else:
         if temp == None: temp = 'NA'
         if humidity == None: humidity = 'NA'
         if forecast == None: forecast = 'NA'
-        update.message.reply_text('<b>{}</b> at UTown\n\nTemperature (°C): {} 🌡️\nHumidity (%): {} 💧\nForecast: {}'.format(date, temp, humidity, forecast), parse_mode='html')
+        weather_message.edit_text('<b>{}</b> at UTown\n\nTemperature (°C): {} 🌡️\nHumidity (%): {} 💧\nForecast: {}'.format(date, temp, humidity, forecast), parse_mode='html')
 
 ##########################
 #                        #
