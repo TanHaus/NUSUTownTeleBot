@@ -14,13 +14,12 @@ import pandas as pd
 
 def start(update, context):
     update.message.reply_text("<b> Welcome to the NUS UTown TeleBot! </b> \n\n" +
-    ## "Ever been hungry in the middle of the night and dying to know which food stores are still open? " +
-    ## "Or wondered to know what are the retail and sporting options here in Utown?\n" 
-    ## "Then you have come to the right place. "
-    "Created by TanHaus, this Bot aims to provide information about the shops and amenities available in the UTown Campus.\n\n" +
+    "This Bot aims to provide information about the shops and amenities available in the UTown Campus.\n\n" +
     "To enhance your UTown experience, you may find the following commands useful: \n" +
-    "/stores: Shows the directory of UTown shops and amenities.\n"
-    "/open: Shows all stores that are currently open.\n", parse_mode = 'html')
+    "/stores: UTown directory\n"
+    "/open: Shops currently open\n"
+    "/haze: Haze conditions in UTown\n\n"
+    "<b>Disclaimer</b>: The opening hours reported by this bot are not applicable during Public Holidays and School Holidays.\n", parse_mode = 'html')
 
 def show_stores(update, context):
     keyboard = []
@@ -66,6 +65,8 @@ def haze(update, context):
         elif PSI <= 300: descriptor = 'Very unhealthy'
         else: descriptor = 'Hazardous'
 
+        if PSI == None: PSI == 'NA'
+        if PM25 == None: PM25 == 'NA'
         update.message.reply_text('PSI reading in UTown: {}\nPM2.5 reading in UTown: {}μ/m³\n\nStatus: {}'.format(PSI, PM25, descriptor))
 
         if descriptor in ['Unhealthy', 'Very unhealthy']: update.message.reply_text('Please minimize outdoor activities! ❌🏃')
@@ -83,8 +84,10 @@ def weather(update, context):
         update.message.reply_text('There is an error getting data from Singapore public data 🙁')
         update.message.reply_text('Please try again later!')
     else:
-        update.message.reply_text('<b>{}</b> at UTown\n\nTemperature: {}°C 🌡️\nHumidity: {}% 💧\nForecast: {}'.format(date, temp, humidity, forecast), parse_mode='html')
-
+        if temp == None: temp = 'NA'
+        if humidity == None: humidity = 'NA'
+        if forecast == None: forecast = 'NA'
+        update.message.reply_text('<b>{}</b> at UTown\n\nTemperature (°C): {} 🌡️\nHumidity (%): {} 💧\nForecast: {}'.format(date, temp, humidity, forecast), parse_mode='html')
 
 ##########################
 #                        #
@@ -94,15 +97,7 @@ def weather(update, context):
 
 def handle_category(update, context):
     query = update.callback_query
-    '''
-    keyboard = []
-    for i in categories:
-        keyboard.append([InlineKeyboardButton(i)])
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    query.edit_message_text('Please choose a category', reply_markup = reply_markup)
-    '''
-    query.message.reply_text("Selected Category: {}".format(query.data))
+    query.message.edit_text("Selected Category: {}".format(query.data))
 
     keyboard = []
     for i in opening_hours[opening_hours['Category']==query.data]['Store']:
@@ -149,22 +144,6 @@ def handle_store(update, context):
         
         return 'But you can still visit {} {} from {} 😊'.format(query.data, next_day_text, store_opening_hours_next)
 
-    # if store_opening_hours == 'Closed':
-    #     query.message.reply_text("{} is closed".format(query.data))
-    #     when_store_open()
-
-    # elif store_opening_hours == 'Open':
-    # #     query.message.reply_text("{} is open".format(query.data))
-    # #     query.message.reply_text('Opening hours: 24/7 🏪')
-    #     pass
-
-    # elif is_open_today(store_opening_hours):
-    #     index = opening_hours[opening_hours.Store == query.data].index[0]
-    #     query.message.reply_text("{} is open until {}.".format(query.data, get_close_time(index)))
-    #     # query.message.reply_text('Opening hours: {}'.format(store_opening_hours))
-
-    # else:
-    #     query.message.reply_text("{} is closed.\n{}".format(query.data, when_store_open()))
     
     info = '<b>{}</b> {}\n'.format(query.data, get_sub_category(query.data))
     if get_category(query.data) == 'Food & Beverages': 
@@ -185,7 +164,7 @@ def handle_store(update, context):
             hours = opening_hours[opening_hours.Store == query.data][day_in_week].iloc[0]
             info += '    {}{}: {}\n'.format(day_in_week, ' (today)' if day_in_week == today.strftime('%a') else '', hours)
 
-    query.message.reply_text(info, parse_mode='html')
+    query.message.edit_text(info, parse_mode='html')
 
     return None
 
@@ -407,12 +386,15 @@ def main():
     dp.add_handler(conv_handler)
     dp.add_error_handler(error)
 
-    port = int(os.environ.get('PORT', '8443'))
+    port = os.environ.get('PORT', 'None')
+    if port!='None':
+        updater.start_webhook(listen='0.0.0.0',
+                            port=int(port),
+                            url_path=token)
+        updater.bot.set_webhook("https://nus-utown.herokuapp.com/{}".format(token))
+    else:
+        updater.start_polling()
 
-    updater.start_webhook(listen='0.0.0.0',
-                          port=port,
-                          url_path=token)
-    updater.bot.set_webhook("https://nus-utown.herokuapp.com/{}".format(token))
     updater.idle()
 
 if __name__=='__main__':
