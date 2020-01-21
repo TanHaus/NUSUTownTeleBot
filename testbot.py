@@ -162,9 +162,15 @@ def handle_store(update, context):
             hours = opening_hours[opening_hours.Store == query.data][day_in_week].iloc[0]
             info += '    {}{}: {}\n'.format(day_in_week, ' (today)' if day_in_week == today.strftime('%a') else '', hours)
 
-    query.message.edit_text(info, parse_mode='html')
+    keyboard = [[InlineKeyboardButton("Show Map Location", callback_data=query.data)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    query.message.edit_text(info, parse_mode='html', reply_markup = reply_markup)
+    return 'handle_store_location'
 
-    return None
+def handle_store_location(update, context):
+    query = update.callback_query
+    location = locations[query.data].split(",")
+    return context.bot.sendLocation(chat_id=query.message.chat.id, latitude=location[0], longitude=location[1])
 
 def error(update, context):
     print('There is an error!\n{}'.format(context.error))
@@ -370,7 +376,8 @@ def main():
         entry_points=[CommandHandler('stores', show_stores)],
         states={
             'handle_category': [CallbackQueryHandler(handle_category)],
-            'handle_store': [CallbackQueryHandler(handle_store)]
+            'handle_store': [CallbackQueryHandler(handle_store)],
+            'handle_store_location': [CallbackQueryHandler(handle_store_location)]
         },
         fallbacks=[CommandHandler('stores', show_stores)]
     )
@@ -402,6 +409,7 @@ if __name__=='__main__':
                                   
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
+    locations = dict(zip(stores, opening_hours["lnglat"]))
     public_holidays = get_PH()
     open247_stores = opening_hours[opening_hours['Mon']=='Open']['Store'].tolist()
 
