@@ -169,8 +169,10 @@ def handle_store(update, context):
 
 def handle_store_location(update, context):
     query = update.callback_query
-    location = locations[query.data].split(",")
-    return context.bot.sendLocation(chat_id=query.message.chat.id, latitude=location[0], longitude=location[1])
+    latitude = opening_hours[opening_hours.Store == query.data].iloc[0]["Latitude"]
+    longitude = opening_hours[opening_hours.Store == query.data].iloc[0]["Longitude"]
+    
+    return context.bot.sendLocation(chat_id=query.message.chat.id, latitude=latitude, longitude=longitude)
 
 def error(update, context):
     print('There is an error!\n{}'.format(context.error))
@@ -409,7 +411,6 @@ if __name__=='__main__':
                                   
     categories = opening_hours['Category'].unique()
     stores = opening_hours['Store']
-    locations = dict(zip(stores, opening_hours["lnglat"]))
     public_holidays = get_PH()
     open247_stores = opening_hours[opening_hours['Mon']=='Open']['Store'].tolist()
 
