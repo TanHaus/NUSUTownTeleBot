@@ -162,17 +162,11 @@ def handle_store(update, context):
             hours = opening_hours[opening_hours.Store == query.data][day_in_week].iloc[0]
             info += '    {}{}: {}\n'.format(day_in_week, ' (today)' if day_in_week == today.strftime('%a') else '', hours)
 
-    keyboard = [[InlineKeyboardButton("Show Map Location", callback_data=query.data)]]
+    keyboard = [[InlineKeyboardButton("Show on Google Maps", url=opening_hours[opening_hours.Store == query.data].iloc[0]["Maps"])]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     query.message.edit_text(info, parse_mode='html', reply_markup = reply_markup)
-    return 'handle_store_location'
 
-def handle_store_location(update, context):
-    query = update.callback_query
-    latitude = opening_hours[opening_hours.Store == query.data].iloc[0]["Latitude"]
-    longitude = opening_hours[opening_hours.Store == query.data].iloc[0]["Longitude"]
-    
-    return context.bot.sendLocation(chat_id=query.message.chat.id, latitude=latitude, longitude=longitude)
+    return None
 
 def error(update, context):
     print('There is an error!\n{}'.format(context.error))
@@ -378,8 +372,7 @@ def main():
         entry_points=[CommandHandler('stores', show_stores)],
         states={
             'handle_category': [CallbackQueryHandler(handle_category)],
-            'handle_store': [CallbackQueryHandler(handle_store)],
-            'handle_store_location': [CallbackQueryHandler(handle_store_location)]
+            'handle_store': [CallbackQueryHandler(handle_store)]
         },
         fallbacks=[CommandHandler('stores', show_stores)]
     )
