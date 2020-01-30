@@ -162,7 +162,9 @@ def handle_store(update, context):
             hours = opening_hours[opening_hours.Store == query.data][day_in_week].iloc[0]
             info += '    {}{}: {}\n'.format(day_in_week, ' (today)' if day_in_week == today.strftime('%a') else '', hours)
 
-    query.message.edit_text(info, parse_mode='html')
+    keyboard = [[InlineKeyboardButton("Show on Google Maps", url=opening_hours[opening_hours.Store == query.data].iloc[0]["Maps"])]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    query.message.edit_text(info, parse_mode='html', reply_markup = reply_markup)
 
     return None
 
